@@ -1,7 +1,10 @@
-This dockerfile uses NGINX proxy and the letsencrypt companion to automaticaly provide HTTPS to containers
+This dockerfile allows you to run mulitple containers under the same ports by using NGINX as a proxy and the letsencrypt image to assign certs. 
 
-What this project does:
-redirect urls to designated containers and provides https to encrypt traffic going to containers
+The proxy will redirect incoming urls to designed containers while allowing all of them to run under the same port
+
+    Example:
+    example1.website.com points to service1
+    example2.website.com points to service2
 
 How it works:
 The example container provides all of the options required to connect your container to the proxy.
