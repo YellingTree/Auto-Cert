@@ -1,0 +1,58 @@
+version: '3'
+services:
+
+  proxy:
+    image: jwilder/nginx-proxy:alpine
+    labels:
+      - "com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy=true"
+    container_name: proxy
+    networks:
+      - encypt_network
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./proxy/conf.d:/etc/nginx/conf.d:rw
+      - ./proxy/vhost.d:/etc/nginx/vhost.d:rw
+      - ./proxy/html:/usr/share/nginx/html:rw
+      - ./proxy/certs:/etc/nginx/certs:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    restart: unless-stopped
+
+  letsencrypt:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    container_name: letsencrypt
+    depends_on:
+      - proxy
+    networks:
+      - encypt_network
+    volumes:
+      - ./proxy/certs:/etc/nginx/certs:rw
+      - ./proxy/vhost.d:/etc/nginx/vhost.d:rw
+      - ./proxy/html:/usr/share/nginx/html:rw
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+
+  example_container:
+    image: httpd:alpine
+    container_name: example-webserver
+    networks:
+      - encypt_network
+    depends_on:
+      - letsencrypt
+      - proxy
+    volumes:
+      - ./webserver/config:/etc/lighttpd:rw
+      - ./webserver/Root:/usr/local/apache2/htdocs:rw
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - VIRTUAL_HOST=[example.website.com]
+      - LETSENCRYPT_HOST=[example.website.com]
+      - LETSENCRYPT_EMAIL=[example@email.com]
+    restart: unless-stopped
+
+
+networks:
+  encypt_network:
